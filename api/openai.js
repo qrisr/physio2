@@ -27,7 +27,7 @@ export default async function handler(req, res) {
       }
   
       // Der gewünschte Prompt mit den vorhandenen Platzhaltern
-      const prompt = `Erstelle einen physiotherapeutischen Abschlussbericht basierend auf den folgenden Eingaben:
+      const prompt = `Erstelle einen physiotherapeutischen Abschlussbericht basierend auf den folgenden Eingaben, halte dich strickt an das Beispiel. 
   • **Therapieziel:** ${formData.goalText || "Nicht angegeben"}
   • **Hypothese:** ${formData.hypothesisText || "Nicht angegeben"}
   ${formData.goal === 'nicht_erreicht' ? `• **Begründung für Nicht-Erreichung:** ${formData.reasonText || "Nicht angegeben"}` : ''}
@@ -36,13 +36,14 @@ export default async function handler(req, res) {
   ${formData.goal === 'nicht_erreicht' ? `• **Compliance:** ${formData.compliance === 'ja' ? 'Gut 🟢' : 'Unzureichend 🔴'}
   • **Ursache:** ${formData.reasonText || "Nicht angegeben"}` : ''}
   
-  Formuliere einen kurzen Bericht, der genau folgendem Muster entspricht. Halte deine Antwort extrem kurz, objektiv und auf einen einzigen Satz beschränkt. Beziehe dich konkret auf die genannten Erkenntnisse und mache eine einzige klare Empfehlung.
+  Formuliere einen Bericht, der exakt folgender Struktur entspricht. Halte deine Antwort extrem kurz, objektiv und auf einen einzigen Satz beschränkt. Beziehe dich konkret auf die genannten Erkenntnisse und mache eine einzige klare Empfehlung.
   
   **Beispiel:**
   Eingaben:
   • **Therapieziel:** Wiederaufnahme Fahrradfahren
   • **Hypothese:** Degenerative Veränderungen im Kniegelenk mit Schmerzen und Bewegungseinschränkungen
   • **Begründung für Nicht-Erreichung:** Patient hat zusätzliche Erkrankung, die ihn an der Therapie hindert
+
   • **Therapieverlauf:**
   • **Therapieziel:** nicht erreicht 🔴
   • **Compliance:** Unzureichend 🔴
@@ -69,7 +70,7 @@ export default async function handler(req, res) {
           messages: [
             {
               role: "system",
-              content: "Du bist ein präziser physiotherapeutischer Assistent, der professionelle Abschlussberichte verfasst. Halte deine Antwort extrem kurz, objektiv und auf einen einzigen Satz beschränkt. Beziehe dich konkret auf die genannten Erkenntnisse und mache eine einzige klare Empfehlung."
+              content: "Du bist ein präziser physiotherapeutischer Assistent, der professionelle Abschlussberichte verfasst."
             },
             {
               role: "user",
