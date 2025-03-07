@@ -26,30 +26,30 @@ export default async function handler(req, res) {
         return;
       }
   
-      // Minimaler Prompt für kürzere Antworten
-      let prompt = `Fasse die folgenden Physiotherapie-Daten KURZ zusammen:\n\n`;
-      prompt += `Therapieziel: ${formData.goalText || "Keine Beschreibung angegeben"}\n`;
-      prompt += `Hypothese: ${formData.hypothesisText || "Keine Hypothese angegeben"}\n\n`;
-      prompt += `Therapieverlauf:\n`;
-      prompt += `- ${formData.goal === 'erreicht' ? '🟢 Therapieziel erreicht' : '🔴 Therapieziel nicht erreicht'}\n`;
-      
-      if (formData.goal === 'nicht_erreicht') {
-        prompt += `- Compliance: ${formData.compliance === 'ja' ? '🟢 Ausreichend' : '🔴 Unzureichend'}\n`;
-        prompt += `- Ursache: ${formData.reasonText || "Keine Begründung angegeben"}\n`;
-      }
-      
-      prompt += `\nGib eine SEHR KURZE Analyse (maximal 2-3 Zeilen) und EINE knappe Empfehlung. Formatiere die Ausgabe genau wie folgt:
-      
-  Therapieziel: [Therapieziel]
-  Hypothese: [Hypothese]
+      // Der gewünschte Prompt mit den vorhandenen Platzhaltern
+      const prompt = `Erstelle einen physiotherapeutischen Abschlussbericht basierend auf den folgenden Eingaben:
+  • **Therapieziel:** ${formData.goalText || "Nicht angegeben"}
+  • **Hypothese:** ${formData.hypothesisText || "Nicht angegeben"}
+  ${formData.goal === 'nicht_erreicht' ? `• **Begründung für Nicht-Erreichung:** ${formData.reasonText || "Nicht angegeben"}` : ''}
+  • **Therapieverlauf:**
+  • **Therapieziel:** ${formData.goal === 'erreicht' ? 'erreicht 🟢' : 'nicht erreicht 🔴'}
+  ${formData.goal === 'nicht_erreicht' ? `• **Compliance:** ${formData.compliance === 'ja' ? 'Gut 🟢' : 'Unzureichend 🔴'}
+  • **Ursache:** ${formData.reasonText || "Nicht angegeben"}` : ''}
   
-  Therapieverlauf:
-  - [🟢 oder 🔴] Therapieziel [erreicht/nicht erreicht]
-  - Compliance: [🟢 oder 🔴] [Bewertung]
-  - Ursache: [Ursache bei Nicht-Erreichung]
+  Formuliere einen kurzen, fachlich fundierten Bericht mit einer klaren Empfehlung in maximal einem Satz.
   
-  Empfehlung: [Eine kurze, prägnante Empfehlung]
-  `;
+  **Beispiel:**
+  Eingaben:
+  • **Therapieziel:** Wiederaufnahme Fahrradfahren
+  • **Hypothese:** Degenerative Veränderungen im Kniegelenk mit Schmerzen und Bewegungseinschränkungen
+  • **Begründung für Nicht-Erreichung:** Patient hat zusätzliche Erkrankung, die ihn an der Therapie hindert
+  • **Therapieverlauf:**
+  • **Therapieziel:** nicht erreicht 🔴
+  • **Compliance:** Unzureichend 🔴
+  • **Ursache:** Mangelnde Motivation, Faulheit
+  
+  **Erwartetes Resultat:**
+  Der Patient hat das Therapieziel nicht erreicht aufgrund mangelnder Motivation und zusätzlicher Erkrankungen; eine weitere medizinische Abklärung sowie motivierende Gesprächsführung zur Steigerung der Therapiebereitschaft wird empfohlen.`;
   
       // OpenAI API-Aufruf mit API-Schlüssel aus Umgebungsvariablen
       const OPENAI_API_KEY = process.env.OPEN_API_KEY;
@@ -65,18 +65,19 @@ export default async function handler(req, res) {
           'Authorization': `Bearer ${OPENAI_API_KEY}`
         },
         body: JSON.stringify({
-          model: "gpt-3.5-turbo",  // Günstigeres Modell statt gpt-4
+          model: "gpt-3.5-turbo", // Günstigeres Modell
           messages: [
             {
               role: "system",
-              content: "Du bist ein knapper, präziser Physiotherapie-Assistent. Halte deine Antworten extrem kurz und verwende die vorgegebene Formatierung mit Emojis. Gib immer genau eine konkrete Empfehlung."
+              content: "Du bist ein präziser physiotherapeutischer Assistent, der professionelle Abschlussberichte verfasst. Halte deine Antwort extrem kurz, objektiv und auf einen einzigen Satz beschränkt. Beziehe dich konkret auf die genannten Erkenntnisse und mache eine einzige klare Empfehlung."
             },
             {
               role: "user",
               content: prompt
             }
           ],
-          temperature: 0.3  // Niedrigere Temperatur für konsistentere, präzisere Antworten
+          temperature: 0.3, // Niedrigere Temperatur für konsistentere Antworten
+          max_tokens: 150   // Begrenzt die Antwortlänge
         })
       });
   
@@ -86,8 +87,27 @@ export default async function handler(req, res) {
         throw new Error(data.error.message || 'OpenAI API-Fehler');
       }
   
+      // Formatierung für die Anzeige
+      let finalResponse = '';
+  
+      // Erste Zeilen (Therapieziel und Hypothese)
+      finalResponse += `Therapieziel: ${formData.goalText || "Nicht angegeben"}\n`;
+      finalResponse += `Hypothese: ${formData.hypothesisText || "Nicht angegeben"}\n\n`;
+      
+      // Therapieverlauf-Abschnitt
+      finalResponse += `Therapieverlauf:\n`;
+      finalResponse += `- ${formData.goal === 'erreicht' ? '🟢 Therapieziel erreicht' : '🔴 Therapieziel nicht erreicht'}\n`;
+      
+      if (formData.goal === 'nicht_erreicht') {
+        finalResponse += `- Compliance: ${formData.compliance === 'ja' ? '🟢 Gut' : '🔴 Unzureichend'}\n`;
+        finalResponse += `- Ursache: ${formData.reasonText || "Nicht angegeben"}\n`;
+      }
+      
+      // Füge die Empfehlung als letzten Abschnitt hinzu
+      finalResponse += `\nEmpfehlung: ${data.choices[0].message.content.trim()}`;
+  
       res.status(200).json({ 
-        result: data.choices[0].message.content 
+        result: finalResponse
       });
       
     } catch (error) {
