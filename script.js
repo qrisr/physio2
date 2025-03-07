@@ -64,7 +64,10 @@ async function callOpenAI(formData) {
         const apiUrl = window.location.hostname === 'localhost' 
             ? 'http://localhost:3000/api/openai' 
             : '/api/openai';
-            
+        
+        console.log("🟡 Sende API-Anfrage an:", apiUrl);
+        console.log("📨 Formulardaten:", JSON.stringify(formData));
+        
         const response = await fetch(apiUrl, {
             method: 'POST',
             headers: {
@@ -72,6 +75,8 @@ async function callOpenAI(formData) {
             },
             body: JSON.stringify(formData)
         });
+
+        console.log("🟠 API Antwort-Status:", response.status);
         
         if (!response.ok) {
             const errorData = await response.json();
@@ -79,9 +84,11 @@ async function callOpenAI(formData) {
         }
         
         const data = await response.json();
+        console.log("✅ Antwort von OpenAI API:", data);
+        
         return data.result;
     } catch (error) {
-        console.error('Fehler beim Aufruf der OpenAI API:', error);
+        console.error('❌ Fehler beim Aufruf der OpenAI API:', error);
         throw error;
     }
 }
@@ -115,24 +122,6 @@ function streamResponse(response, element) {
     displayNextSentence();
 }
 
-// Für den Fall, dass die OpenAI API nicht verfügbar ist, simulieren wir eine Antwort
-function getMockResponse(formData) {
-    return `Basierend auf den bereitgestellten Daten habe ich folgende Analyse Ihres physiotherapeutischen Falls:
-
-Die Hypothese über ${formData.hypothesisText} erscheint nachvollziehbar. ${formData.goal === 'erreicht' ? 'Erfreulicherweise wurde das Behandlungsziel erreicht.' : 'Leider wurde das Behandlungsziel noch nicht erreicht.'} 
-${formData.goal === 'nicht_erreicht' ? `Die angegebene Begründung (${formData.reasonText}) ist ein wichtiger Faktor, der bei der weiteren Behandlungsplanung berücksichtigt werden sollte.` : ''}
-
-Eine fortgesetzte Behandlung mit fokussierter Kräftigung der umgebenden Muskulatur und gezielten Beweglichkeitsübungen ist empfehlenswert. Auch sollten Maßnahmen zur Schmerzreduktion wie manuelle Therapie und möglicherweise physikalische Anwendungen in Betracht gezogen werden.
-
-Ich empfehle:
-1. Fortführung der Physiotherapie mit 2 Einheiten pro Woche
-2. Ergänzende Heimübungen zur Kräftigung 
-3. Anwendung von Kältetherapie bei akuten Schmerzzuständen
-4. Regelmäßige Verlaufskontrolle und Anpassung des Therapieplans bei Bedarf
-
-Der Patient sollte außerdem über die Bedeutung einer konsequenten Durchführung der Übungen aufgeklärt werden.`;
-}
-
 // Formular absenden
 document.getElementById('therapyForm').addEventListener('submit', async function(e) {
     e.preventDefault();
@@ -164,16 +153,16 @@ document.getElementById('therapyForm').addEventListener('submit', async function
     
     // Mache API-Anfrage an OpenAI
     try {
-        // Versuche, die echte API zu verwenden
+        console.log("🚀 Sende Daten an OpenAI...");
         const response = await callOpenAI(formData);
+        console.log("📥 Antwort erhalten:", response);
+        
         streamResponse(response, responseText);
         loadingIndicator.style.display = 'none';
     } catch (error) {
         console.error("API-Fehler:", error);
         
-        // Bei Fehler: Verwende die Mock-Antwort
-        const mockResponse = getMockResponse(formData);
-        streamResponse(mockResponse, responseText);
+        // Bei Fehler den Lade-Indikator ausblenden
         loadingIndicator.style.display = 'none';
     }
 });
