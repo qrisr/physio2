@@ -26,32 +26,36 @@ export default async function handler(req, res) {
         return;
       }
   
-      // Der gewünschte Prompt mit den vorhandenen Platzhaltern
-      const prompt = `Erstelle einen physiotherapeutischen Abschlussbericht basierend auf den folgenden Eingaben, halte dich strickt an das Beispiel. 
-  • **Therapieziel:** ${formData.goalText || "Nicht angegeben"}
-  • **Hypothese:** ${formData.hypothesisText || "Nicht angegeben"}
-  ${formData.goal === 'nicht_erreicht' ? `• **Begründung für Nicht-Erreichung:** ${formData.reasonText || "Nicht angegeben"}` : ''}
-  • **Therapieverlauf:**
-  • **Therapieziel:** ${formData.goal === 'erreicht' ? 'erreicht 🟢' : 'nicht erreicht 🔴'}
-  ${formData.goal === 'nicht_erreicht' ? `• **Compliance:** ${formData.compliance === 'ja' ? 'Gut 🟢' : 'Unzureichend 🔴'}
-  • **Ursache:** ${formData.reasonText || "Nicht angegeben"}` : ''}
+      // Formatierung für die Anzeige - wir erstellen dies direkt
+      let finalResponse = '';
   
-  Formuliere einen Bericht, der exakt folgender Struktur entspricht. Halte deine Antwort extrem kurz, objektiv und auf einen einzigen Satz beschränkt. Beziehe dich konkret auf die genannten Erkenntnisse und mache eine einzige klare Empfehlung.
+      // Erste Zeilen (Therapieziel und Hypothese)
+      finalResponse += `Therapieziel: ${formData.goalText || "Nicht angegeben"}\n`;
+      finalResponse += `Hypothese: ${formData.hypothesisText || "Nicht angegeben"}\n\n`;
+      
+      // Therapieverlauf-Abschnitt
+      finalResponse += `Therapieverlauf:\n`;
+      finalResponse += `- ${formData.goal === 'erreicht' ? '🟢 Therapieziel erreicht' : '🔴 Therapieziel nicht erreicht'}\n`;
+      
+      if (formData.goal === 'nicht_erreicht') {
+        finalResponse += `- Compliance: ${formData.compliance === 'ja' ? '🟢 Gut' : '🔴 Unzureichend'}\n`;
+        finalResponse += `- Ursache: ${formData.reasonText || "Nicht angegeben"}\n`;
+      }
+      
+      // Nur die Empfehlung mit GPT erstellen
+      const empfehlungPrompt = `
+  Erstelle eine EXTREM KURZE Empfehlung (nur ein Satz!) für einen Physiotherapie-Abschlussbericht mit:
   
-  **Beispiel:**
-  Eingaben:
-  • **Therapieziel:** Wiederaufnahme Fahrradfahren
-  • **Hypothese:** Degenerative Veränderungen im Kniegelenk mit Schmerzen und Bewegungseinschränkungen
-  • **Begründung für Nicht-Erreichung:** Patient hat zusätzliche Erkrankung, die ihn an der Therapie hindert
-
-  • **Therapieverlauf:**
-  • **Therapieziel:** nicht erreicht 🔴
-  • **Compliance:** Unzureichend 🔴
-  • **Ursache:** Mangelnde Motivation, Faulheit
+  Therapieziel: ${formData.goalText || "Nicht angegeben"}
+  Hypothese: ${formData.hypothesisText || "Nicht angegeben"}
+  ${formData.goal === 'nicht_erreicht' ? `Begründung: ${formData.reasonText || "Nicht angegeben"}` : ''}
+  Ziel ${formData.goal === 'erreicht' ? 'erreicht' : 'nicht erreicht'}
+  ${formData.goal === 'nicht_erreicht' ? `Compliance: ${formData.compliance === 'ja' ? 'Gut' : 'Unzureichend'}` : ''}
   
-  **Erwartetes Resultat:**
-  Der Patient hat das Therapieziel nicht erreicht aufgrund mangelnder Motivation und zusätzlicher Erkrankungen; eine weitere medizinische Abklärung sowie motivierende Gesprächsführung zur Steigerung der Therapiebereitschaft wird empfohlen.`;
+  Schreibe NUR EINEN EINZIGEN SATZ ohne Überschrift. Der Satz sollte mit "Weitere" oder einer ähnlichen Formulierung beginnen und eine klare Empfehlung enthalten. 
   
+  Beispiel-Satz: "Weitere medizinische Abklärung sowie motivierende Gesprächsführung zur Steigerung der Therapiebereitschaft wird empfohlen."`;
+      
       // OpenAI API-Aufruf mit API-Schlüssel aus Umgebungsvariablen
       const OPENAI_API_KEY = process.env.OPEN_API_KEY;
       
@@ -70,15 +74,15 @@ export default async function handler(req, res) {
           messages: [
             {
               role: "system",
-              content: "Du bist ein präziser physiotherapeutischer Assistent, der professionelle Abschlussberichte verfasst."
+              content: "Du bist ein Assistent mit der Aufgabe, extrem kurze, präzise Empfehlungen zu formulieren. Du darfst nur einen einzigen Satz als Antwort geben, ohne Einleitung oder Erklärung. Halte dich strikt an diese Vorgabe."
             },
             {
               role: "user",
-              content: prompt
+              content: empfehlungPrompt
             }
           ],
-          temperature: 0.3, // Niedrigere Temperatur für konsistentere Antworten
-          max_tokens: 150   // Begrenzt die Antwortlänge
+          temperature: 0.1, // Sehr niedrige Temperatur für konsistentere Antworten
+          max_tokens: 75    // Stark begrenzte Antwortlänge
         })
       });
   
@@ -88,24 +92,19 @@ export default async function handler(req, res) {
         throw new Error(data.error.message || 'OpenAI API-Fehler');
       }
   
-      // Formatierung für die Anzeige
-      let finalResponse = '';
-  
-      // Erste Zeilen (Therapieziel und Hypothese)
-      finalResponse += `Therapieziel: ${formData.goalText || "Nicht angegeben"}\n`;
-      finalResponse += `Hypothese: ${formData.hypothesisText || "Nicht angegeben"}\n\n`;
+      // Extrahiere nur einen Satz aus der Antwort
+      let empfehlung = data.choices[0].message.content.trim();
       
-      // Therapieverlauf-Abschnitt
-      finalResponse += `Therapieverlauf:\n`;
-      finalResponse += `- ${formData.goal === 'erreicht' ? '🟢 Therapieziel erreicht' : '🔴 Therapieziel nicht erreicht'}\n`;
+      // Entferne "Empfehlung:" oder ähnliche Überschriften, falls vorhanden
+      empfehlung = empfehlung.replace(/^(Empfehlung:|\s*)/i, '');
       
-      if (formData.goal === 'nicht_erreicht') {
-        finalResponse += `- Compliance: ${formData.compliance === 'ja' ? '🟢 Gut' : '🔴 Unzureichend'}\n`;
-        finalResponse += `- Ursache: ${formData.reasonText || "Nicht angegeben"}\n`;
+      // Beschränke auf den ersten Satz, wenn mehrere vorhanden sind
+      if (empfehlung.includes('.')) {
+        empfehlung = empfehlung.split('.')[0] + '.';
       }
       
       // Füge die Empfehlung als letzten Abschnitt hinzu
-      finalResponse += `\nEmpfehlung: ${data.choices[0].message.content.trim()}`;
+      finalResponse += `\nEmpfehlung: ${empfehlung}`;
   
       res.status(200).json({ 
         result: finalResponse
