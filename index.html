@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Physiotherapie-Abschlussbericht</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="form-container">
+        <h1>Abschlussbericht erstellen</h1>
+        <form id="therapyForm">
+            <div class="form-group">
+                <label for="time">Zeit</label>
+                <div class="form-row">
+                    <input type="time" id="time" name="time" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="goal">Physiotherapie-Ziel</label>
+                <div class="select-container">
+                    <select id="goal" name="goal" required onchange="toggleFields()">
+                        <option value="">Bitte auswählen</option>
+                        <option value="erreicht">Ziel erreicht</option>
+                        <option value="nicht_erreicht">Ziel nicht erreicht</option>
+                    </select>
+                    <span id="goalIcon" class="emoji-icon"></span>
+                </div>
+            </div>
+
+            <div class="form-group" id="complianceField" style="display: none;">
+                <label for="compliance">Compliance</label>
+                <div class="select-container">
+                    <select id="compliance" name="compliance" onchange="updateComplianceIcon()">
+                        <option value="">Bitte auswählen</option>
+                        <option value="ja">Ja</option>
+                        <option value="nein">Nein</option>
+                    </select>
+                    <span id="complianceIcon" class="emoji-icon"></span>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="goalText">Text Zieleingabe einfügen</label>
+                <div class="example">Beispiel: "Patient will wieder Fahrrad fahren"</div>
+                <textarea id="goalText" name="goalText"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="hypothesisText">Text Hypotheseneingabe</label>
+                <div class="example">Beispiel: "Degenerative Veränderungen im Kniegelenk führten zu Schmerzen und Bewegungseinschränkungen"</div>
+                <textarea id="hypothesisText" name="hypothesisText"></textarea>
+            </div>
+
+            <div class="form-group conditional-field" id="reasonField">
+                <label for="reasonText">Begründung für Nicht-Erreichung des Ziels</label>
+                <div class="example">Beispiel: "Patient hat zusätzliche Erkrankung, die ihn an der Therapie hindert" oder "Patient hat Termine nicht wahrgenommen"</div>
+                <textarea id="reasonText" name="reasonText"></textarea>
+            </div>
+
+            <div class="buttons">
+                <button type="button" class="btn btn-reset" onclick="resetForm()">
+                    <span>↺</span> Formular löschen
+                </button>
+                <button type="submit" class="btn btn-submit">Absenden</button>
+            </div>
+            
+            <div class="disclaimer">
+                Übermitteln Sie über dieses Formular keine Passwörter. Ein schädliches Formular melden
+            </div>
+        </form>
+        
+        <!-- Response Container für die OpenAI Antwort -->
+        <div id="response-container" class="response-container" style="display: none;">
+            <h2>Analyse des Physiotherapie-Abschlussberichts</h2>
+            <div id="loading-indicator" class="loading-indicator">
+                <div class="spinner"></div>
+                <p>Antwort wird generiert, bitte warten...</p>
+            </div>
+            <div id="response-text" class="response-text"></div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

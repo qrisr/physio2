@@ -1,0 +1,20 @@
+// Set current time when page loads
+window.onload = function() {
+    updateCurrentTime();
+};
+
+function updateCurrentTime() {
+    const now = new Date();
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    document.getElementById('time').value = `${hours}:${minutes}`;
+}
+
+function toggleFields() {
+    const goalSelect = document.getElementById('goal');
+    const reasonField = document.getElementById('reasonField');
+    const complianceField = document.getElementById('complianceField');
+    const goalIcon = document.getElementById('goalIcon');
+    
+    if (goalSelect.value === 'nicht_erreicht') {
+        reasonField.style.displ
