@@ -1,5 +1,4 @@
-// Diese Datei in den Ordner /api Ihres Projekts legen (Vercel erkennt automatisch Dateien in diesem Ordner als Serverless Functions)
-
+// Diese Datei in den Ordner /api Ihres Projekts legen
 export default async function handler(req, res) {
     // CORS-Header für lokale Entwicklung
     res.setHeader('Access-Control-Allow-Credentials', true);
