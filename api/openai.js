@@ -42,7 +42,7 @@ export default async function handler(req, res) {
       prompt += `\nBitte gib eine ausführliche Analyse und weitere spezifische Behandlungsempfehlungen basierend auf diesen Informationen. Verwende einen professionellen, medizinisch korrekten Sprachstil.`;
   
       // OpenAI API-Aufruf mit API-Schlüssel aus Umgebungsvariablen
-      const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+      const OPENAI_API_KEY = process.env.OPEN_API_KEY;
       
       if (!OPENAI_API_KEY) {
         throw new Error('OpenAI API-Schlüssel nicht konfiguriert');
