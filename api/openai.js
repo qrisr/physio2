@@ -36,7 +36,7 @@ export default async function handler(req, res) {
   ${formData.goal === 'nicht_erreicht' ? `• **Compliance:** ${formData.compliance === 'ja' ? 'Gut 🟢' : 'Unzureichend 🔴'}
   • **Ursache:** ${formData.reasonText || "Nicht angegeben"}` : ''}
   
-  Formuliere einen kurzen, fachlich fundierten Bericht mit einer klaren Empfehlung in maximal einem Satz.
+  Formuliere einen kurzen Bericht, der genau folgendem Muster entspricht. Halte deine Antwort extrem kurz, objektiv und auf einen einzigen Satz beschränkt. Beziehe dich konkret auf die genannten Erkenntnisse und mache eine einzige klare Empfehlung.
   
   **Beispiel:**
   Eingaben:
