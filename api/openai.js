@@ -26,19 +26,30 @@ export default async function handler(req, res) {
         return;
       }
   
-      // Prompt basierend auf den Formulardaten erstellen
-      let prompt = `Analysiere folgende Physiotherapie-Daten und erstelle einen professionellen Bericht mit medizinisch fundierten Empfehlungen:\n\n`;
-      prompt += `Zeit der Bewertung: ${formData.time}\n`;
-      prompt += `Ziel: ${formData.goal === 'erreicht' ? 'Ziel erreicht' : 'Ziel nicht erreicht'}\n`;
-      prompt += `Ziel-Beschreibung: ${formData.goalText || "Keine Beschreibung angegeben"}\n`;
-      prompt += `Hypothese: ${formData.hypothesisText || "Keine Hypothese angegeben"}\n`;
+      // Minimaler Prompt für kürzere Antworten
+      let prompt = `Fasse die folgenden Physiotherapie-Daten KURZ zusammen:\n\n`;
+      prompt += `Therapieziel: ${formData.goalText || "Keine Beschreibung angegeben"}\n`;
+      prompt += `Hypothese: ${formData.hypothesisText || "Keine Hypothese angegeben"}\n\n`;
+      prompt += `Therapieverlauf:\n`;
+      prompt += `- ${formData.goal === 'erreicht' ? '🟢 Therapieziel erreicht' : '🔴 Therapieziel nicht erreicht'}\n`;
       
       if (formData.goal === 'nicht_erreicht') {
-        prompt += `Compliance: ${formData.compliance === 'ja' ? 'Ja' : formData.compliance === 'nein' ? 'Nein' : 'Nicht angegeben'}\n`;
-        prompt += `Begründung für Nicht-Erreichung: ${formData.reasonText || "Keine Begründung angegeben"}\n`;
+        prompt += `- Compliance: ${formData.compliance === 'ja' ? '🟢 Ausreichend' : '🔴 Unzureichend'}\n`;
+        prompt += `- Ursache: ${formData.reasonText || "Keine Begründung angegeben"}\n`;
       }
       
-      prompt += `\nBitte gib eine ausführliche Analyse und weitere spezifische Behandlungsempfehlungen basierend auf diesen Informationen. Verwende einen professionellen, medizinisch korrekten Sprachstil.`;
+      prompt += `\nGib eine SEHR KURZE Analyse (maximal 2-3 Zeilen) und EINE knappe Empfehlung. Formatiere die Ausgabe genau wie folgt:
+      
+  Therapieziel: [Therapieziel]
+  Hypothese: [Hypothese]
+  
+  Therapieverlauf:
+  - [🟢 oder 🔴] Therapieziel [erreicht/nicht erreicht]
+  - Compliance: [🟢 oder 🔴] [Bewertung]
+  - Ursache: [Ursache bei Nicht-Erreichung]
+  
+  Empfehlung: [Eine kurze, prägnante Empfehlung]
+  `;
   
       // OpenAI API-Aufruf mit API-Schlüssel aus Umgebungsvariablen
       const OPENAI_API_KEY = process.env.OPEN_API_KEY;
@@ -54,18 +65,18 @@ export default async function handler(req, res) {
           'Authorization': `Bearer ${OPENAI_API_KEY}`
         },
         body: JSON.stringify({
-          model: "gpt-4",  // Sie können auch gpt-3.5-turbo verwenden, wenn gewünscht
+          model: "gpt-3.5-turbo",  // Günstigeres Modell statt gpt-4
           messages: [
             {
               role: "system",
-              content: "Du bist ein erfahrener Physiotherapeut, der medizinische Daten analysiert und fundierte, professionelle Empfehlungen gibt. Deine Antworten sollen gut strukturiert, fachlich korrekt und praxisorientiert sein."
+              content: "Du bist ein knapper, präziser Physiotherapie-Assistent. Halte deine Antworten extrem kurz und verwende die vorgegebene Formatierung mit Emojis. Gib immer genau eine konkrete Empfehlung."
             },
             {
               role: "user",
               content: prompt
             }
           ],
-          temperature: 0.7  // Anpassen für mehr oder weniger kreative Antworten
+          temperature: 0.3  // Niedrigere Temperatur für konsistentere, präzisere Antworten
         })
       });
   
